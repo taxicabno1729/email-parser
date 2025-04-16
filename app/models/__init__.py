@@ -1,0 +1,1 @@
+# Model modules for the Email Parser Application 

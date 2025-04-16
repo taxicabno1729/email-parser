@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Email Parser</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+        h1, h2 {
+            color: #2d3748;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+            margin-top: 5px;
+        }
+        button {
+            background-color: #4a5568;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2d3748;
+        }
+        .btn-primary {
+            background-color: #3182ce;
+        }
+        .btn-primary:hover {
+            background-color: #2c5282;
+        }
+        .btn-danger {
+            background-color: #e53e3e;
+        }
+        .btn-danger:hover {
+            background-color: #c53030;
+        }
+        .btn-success {
+            background-color: #38a169;
+        }
+        .btn-success:hover {
+            background-color: #2f855a;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active {
+            border-bottom: 2px solid #3182ce;
+            font-weight: 600;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .results {
+            margin-top: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f8f9fa;
+        }
+        .json-viewer {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow: auto;
+            max-height: 500px;
+        }
+        pre {
+            margin: 0;
+            white-space: pre-wrap;
+        }
+        .error {
+            color: #c53030;
+        }
+        .success {
+            color: #38a169;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Email Parser Application</h1>
+        
+        <div class="tabs">
+            <div class="tab active" data-tab="connect">Connect</div>
+            <div class="tab" data-tab="fetch">Fetch Emails</div>
+            <div class="tab" data-tab="parse">Parse Email</div>
+            <div class="tab" data-tab="manual">Manual Input</div>
+            <div class="tab" data-tab="export">Export Data</div>
+        </div>
+        
+        <!-- Connect Tab -->
+        <div class="tab-content active" id="connect-tab">
+            <div class="card">
+                <h2>Connect to Email Server</h2>
+                <div class="form-group">
+                    <label for="email-server">Email Server</label>
+                    <input type="text" id="email-server" placeholder="imap.example.com">
+                </div>
+                <div class="form-group">
+                    <label for="email-port">Port</label>
+                    <input type="text" id="email-port" placeholder="993">
+                </div>
+                <div class="form-group">
+                    <label for="email-address">Email Address</label>
+                    <input type="email" id="email-address" placeholder="your@email.com">
+                </div>
+                <div class="form-group">
+                    <label for="email-password">Password</label>
+                    <input type="password" id="email-password">
+                </div>
+                <button class="btn-primary" id="connect-btn">Connect</button>
+                <div id="connect-status" class="results"></div>
+            </div>
+        </div>
+        
+        <!-- Fetch Emails Tab -->
+        <div class="tab-content" id="fetch-tab">
+            <div class="card">
+                <h2>Fetch Emails</h2>
+                <div class="form-group">
+                    <label for="email-folder">Folder</label>
+                    <input type="text" id="email-folder" placeholder="INBOX" value="INBOX">
+                </div>
+                <div class="form-group">
+                    <label for="email-limit">Limit</label>
+                    <input type="number" id="email-limit" placeholder="10" value="10">
+                </div>
+                <div class="form-group">
+                    <label for="email-criteria">Search Criteria</label>
+                    <input type="text" id="email-criteria" placeholder="ALL" value="ALL">
+                </div>
+                <button class="btn-primary" id="fetch-btn">Fetch Emails</button>
+                <div id="fetch-results" class="results">
+                    <table id="emails-table" style="display:none;">
+                        <thead>
+                            <tr>
+                                <th>Subject</th>
+                                <th>From</th>
+                                <th>Date</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="emails-list"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Parse Email Tab -->
+        <div class="tab-content" id="parse-tab">
+            <div class="card">
+                <h2>Parse Email</h2>
+                <div id="selected-email-info"></div>
+                <div id="parse-results" class="results">
+                    <div class="json-viewer">
+                        <pre id="parsed-data"></pre>
+                    </div>
+                </div>
+                <button class="btn-success" id="add-to-export-btn" style="display:none;">Add to Export</button>
+            </div>
+        </div>
+        
+        <!-- Manual Input Tab -->
+        <div class="tab-content" id="manual-tab">
+            <div class="card">
+                <h2>Manual Email Input</h2>
+                <div class="form-group">
+                    <label for="manual-email">Paste Email Content</label>
+                    <textarea id="manual-email" rows="10" placeholder="Paste email content here..."></textarea>
+                </div>
+                <button class="btn-primary" id="parse-manual-btn">Parse</button>
+                <div id="manual-results" class="results">
+                    <div class="json-viewer">
+                        <pre id="manual-parsed-data"></pre>
+                    </div>
+                </div>
+                <button class="btn-success" id="add-manual-to-export-btn" style="display:none;">Add to Export</button>
+            </div>
+        </div>
+        
+        <!-- Export Tab -->
+        <div class="tab-content" id="export-tab">
+            <div class="card">
+                <h2>Export Data</h2>
+                <div class="form-group">
+                    <label for="export-format">Export Format</label>
+                    <select id="export-format">
+                        <option value="csv">CSV</option>
+                        <option value="json">JSON</option>
+                        <option value="excel">Excel</option>
+                    </select>
+                </div>
+                <button class="btn-primary" id="export-btn">Export Data</button>
+                <button class="btn-danger" id="clear-data-btn">Clear Data</button>
+                <div id="export-results" class="results"></div>
+                <h3>Emails to Export (<span id="export-count">0</span>)</h3>
+                <div id="export-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Store current emails and parsed data
+        let currentEmails = [];
+        let parsedEmails = [];
+        
+        // Tab switching
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                
+                tab.classList.add('active');
+                document.getElementById(`${tab.dataset.tab}-tab`).classList.add('active');
+            });
+        });
+        
+        // Connect to email server
+        document.getElementById('connect-btn').addEventListener('click', async () => {
+            const server = document.getElementById('email-server').value;
+            const port = document.getElementById('email-port').value;
+            const email = document.getElementById('email-address').value;
+            const password = document.getElementById('email-password').value;
+            
+            const statusElement = document.getElementById('connect-status');
+            statusElement.innerHTML = 'Connecting...';
+            
+            try {
+                const response = await fetch('/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ server, port, email, password })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    statusElement.innerHTML = `<p class="success">${data.message}</p>`;
+                } else {
+                    statusElement.innerHTML = `<p class="error">${data.message}</p>`;
+                }
+            } catch (error) {
+                statusElement.innerHTML = `<p class="error">Connection failed: ${error.message}</p>`;
+            }
+        });
+        
+        // Fetch emails
+        document.getElementById('fetch-btn').addEventListener('click', async () => {
+            const folder = document.getElementById('email-folder').value;
+            const limit = document.getElementById('email-limit').value;
+            const criteria = document.getElementById('email-criteria').value;
+            
+            const resultsElement = document.getElementById('fetch-results');
+            resultsElement.innerHTML = 'Fetching emails...';
+            
+            try {
+                const response = await fetch('/fetch-emails', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ folder, limit, criteria })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    // Store emails
+                    currentEmails = data.emails;
+                    
+                    // Display emails in table
+                    const tableElement = document.getElementById('emails-table');
+                    const listElement = document.getElementById('emails-list');
+                    
+                    listElement.innerHTML = '';
+                    
+                    if (currentEmails.length === 0) {
+                        resultsElement.innerHTML = 'No emails found.';
+                        tableElement.style.display = 'none';
+                    } else {
+                        currentEmails.forEach((email, index) => {
+                            const row = document.createElement('tr');
+                            
+                            row.innerHTML = `
+                                <td>${email.subject}</td>
+                                <td>${email.from}</td>
+                                <td>${email.date}</td>
+                                <td><button class="parse-email-btn" data-index="${index}">Parse</button></td>
+                            `;
+                            
+                            listElement.appendChild(row);
+                        });
+                        
+                        // Add event listeners to parse buttons
+                        document.querySelectorAll('.parse-email-btn').forEach(btn => {
+                            btn.addEventListener('click', () => {
+                                const emailIndex = btn.dataset.index;
+                                const email = currentEmails[emailIndex];
+                                
+                                // Switch to parse tab
+                                document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+                                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                                
+                                document.querySelector('.tab[data-tab="parse"]').classList.add('active');
+                                document.getElementById('parse-tab').classList.add('active');
+                                
+                                // Show email info
+                                document.getElementById('selected-email-info').innerHTML = `
+                                    <div class="form-group">
+                                        <label>Subject</label>
+                                        <input type="text" value="${email.subject}" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>From</label>
+                                        <input type="text" value="${email.from}" readonly>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Date</label>
+                                        <input type="text" value="${email.date}" readonly>
+                                    </div>
+                                `;
+                                
+                                // Parse email
+                                parseEmail(email.body);
+                            });
+                        });
+                        
+                        resultsElement.innerHTML = '';
+                        tableElement.style.display = 'table';
+                    }
+                } else {
+                    resultsElement.innerHTML = `<p class="error">${data.message}</p>`;
+                }
+            } catch (error) {
+                resultsElement.innerHTML = `<p class="error">Failed to fetch emails: ${error.message}</p>`;
+            }
+        });
+        
+        // Parse email function
+        async function parseEmail(emailContent) {
+            const resultsElement = document.getElementById('parsed-data');
+            resultsElement.textContent = 'Parsing...';
+            
+            try {
+                const response = await fetch('/parse-email', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email_content: emailContent })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    // Display parsed data
+                    resultsElement.textContent = JSON.stringify(data.parsed_data, null, 2);
+                    
+                    // Store parsed data
+                    currentParsedData = data.parsed_data;
+                    
+                    // Show add to export button
+                    document.getElementById('add-to-export-btn').style.display = 'inline-block';
+                } else {
+                    resultsElement.textContent = `Error: ${data.message}`;
+                    document.getElementById('add-to-export-btn').style.display = 'none';
+                }
+            } catch (error) {
+                resultsElement.textContent = `Error: ${error.message}`;
+                document.getElementById('add-to-export-btn').style.display = 'none';
+            }
+        }
+        
+        // Parse manual email
+        document.getElementById('parse-manual-btn').addEventListener('click', () => {
+            const emailContent = document.getElementById('manual-email').value;
+            
+            if (!emailContent) {
+                document.getElementById('manual-parsed-data').textContent = 'Please enter email content.';
+                return;
+            }
+            
+            const resultsElement = document.getElementById('manual-parsed-data');
+            resultsElement.textContent = 'Parsing...';
+            
+            fetch('/parse-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email_content: emailContent })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Display parsed data
+                    resultsElement.textContent = JSON.stringify(data.parsed_data, null, 2);
+                    
+                    // Store parsed data
+                    currentParsedData = data.parsed_data;
+                    
+                    // Show add to export button
+                    document.getElementById('add-manual-to-export-btn').style.display = 'inline-block';
+                } else {
+                    resultsElement.textContent = `Error: ${data.message}`;
+                    document.getElementById('add-manual-to-export-btn').style.display = 'none';
+                }
+            })
+            .catch(error => {
+                resultsElement.textContent = `Error: ${error.message}`;
+                document.getElementById('add-manual-to-export-btn').style.display = 'none';
+            });
+        });
+        
+        // Add to export - from parsed tab
+        document.getElementById('add-to-export-btn').addEventListener('click', () => {
+            if (currentParsedData) {
+                parsedEmails.push(currentParsedData);
+                updateExportList();
+                alert('Added to export list');
+            }
+        });
+        
+        // Add to export - from manual tab
+        document.getElementById('add-manual-to-export-btn').addEventListener('click', () => {
+            if (currentParsedData) {
+                parsedEmails.push(currentParsedData);
+                updateExportList();
+                alert('Added to export list');
+            }
+        });
+        
+        // Update export list
+        function updateExportList() {
+            const countElement = document.getElementById('export-count');
+            const listElement = document.getElementById('export-list');
+            
+            countElement.textContent = parsedEmails.length;
+            
+            listElement.innerHTML = '';
+            
+            parsedEmails.forEach((data, index) => {
+                const item = document.createElement('div');
+                item.className = 'card';
+                
+                const title = data.vendor_name || data.order_number || `Item ${index + 1}`;
+                
+                item.innerHTML = `
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3>${title}</h3>
+                        <button class="btn-danger remove-item-btn" data-index="${index}">Remove</button>
+                    </div>
+                    <p>Order Total: ${data.total_amount || 'N/A'}</p>
+                    <p>Items: ${data.items ? data.items.length : 0}</p>
+                `;
+                
+                listElement.appendChild(item);
+            });
+            
+            // Add event listeners to remove buttons
+            document.querySelectorAll('.remove-item-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const index = parseInt(btn.dataset.index);
+                    parsedEmails.splice(index, 1);
+                    updateExportList();
+                });
+            });
+        }
+        
+        // Export data
+        document.getElementById('export-btn').addEventListener('click', async () => {
+            if (parsedEmails.length === 0) {
+                alert('No data to export.');
+                return;
+            }
+            
+            const format = document.getElementById('export-format').value;
+            const resultsElement = document.getElementById('export-results');
+            
+            resultsElement.innerHTML = 'Exporting...';
+            
+            try {
+                const response = await fetch('/export', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ parsed_data: parsedEmails, format })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    resultsElement.innerHTML = `<p class="success">Data exported successfully to: ${data.export_path}</p>`;
+                } else {
+                    resultsElement.innerHTML = `<p class="error">${data.message}</p>`;
+                }
+            } catch (error) {
+                resultsElement.innerHTML = `<p class="error">Export failed: ${error.message}</p>`;
+            }
+        });
+        
+        // Clear export data
+        document.getElementById('clear-data-btn').addEventListener('click', () => {
+            if (confirm('Are you sure you want to clear all data?')) {
+                parsedEmails = [];
+                updateExportList();
+                document.getElementById('export-results').innerHTML = '';
+            }
+        });
+    </script>
+</body>
+</html> 
